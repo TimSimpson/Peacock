@@ -20,7 +20,7 @@ class Images(Base):
     __tablename__ = 'images'
 
     id    = Column(Integer,     nullable=False, primary_key=True)
-    srcId = Column(Integer,     nullable=False)
+    source_id = Column(Integer,     nullable=False)
     path  = Column(String(256), nullable=False)
     datetime  = Column(DateTime,    nullable=False)
     caption = Column(String(256), nullable=True)
@@ -53,7 +53,8 @@ class ImageSources(Base):
 
 class Database(object):
 
-    def __init__(self, connection_string, autocommit, expire_on_commit):
+    def __init__(self, connection_string, autocommit=True,
+                 expire_on_commit=True):
         self._engine = sqlalchemy.engine.create_engine(connection_string)
         self._autocommit = autocommit
         self._expire_on_commit = expire_on_commit
@@ -90,21 +91,30 @@ class Connection(object):
 
     def __init__(self, session):
         self._session = session
+        self._sources = None
 
     def add_directory(self, directory):
         row = ImageSources(directory=directory)
         self._session.add(row)
         self._session.flush()
+        if self._sources is not None:
+            self._sources[row.id] = row
         return row.id
 
     def add_image(self, source_id, path, datetime):
-        row = Images(srcId=source_id, path=path,
+        row = Images(source_id=source_id, path=path,
             datetime=datetime, caption=None)
 
-
     def find(self, start, tags):
-        count = count or 100
-        return ImageCursor(self._session, start, tags)
+        return ImageFinder(self._session, start, tags)
+
+    def get_source(self, source_id):
+        if self._sources is None:
+            l = self._session.query(ImageSources).all()
+            for s in l:
+                self._sources[s.id] = s
+        return self._sources[source_id]
+
 
 
 class ExpandingList(object):
@@ -132,7 +142,7 @@ class ExpandingList(object):
         return self._indexmod
 
 
-class ImageCursor(object):
+class ImageFinder(object):
     """
     A way to iterate images based on some initial query.
     """
@@ -145,7 +155,7 @@ class ImageCursor(object):
         self._hit_left = False
         self._initial_start = start
 
-    def get(self, index):
+    def _fetch(self, index):
         if index >= self._list.max and not self._hit_right:
             if self._list.max == 0:
                 max_known_date = self._initial_start
@@ -174,5 +184,15 @@ class ImageCursor(object):
                 self._hit_left = True
             self._list.add_right(l)
 
-        if index < self._list.min and index >= self._list.max:
+    def get(self, index):
+        self._fetch(index)
+
+        if self.exists(index):
             return self._list.get(index)
+        else:
+            raise Exception("No image at index %s" % index)
+
+    def exists(self, index):
+        self._fetch(index)
+        return index < self._list.min and index >= self._list.max
+

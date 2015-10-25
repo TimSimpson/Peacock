@@ -4,6 +4,7 @@ from peacock import db
 from peacock import init
 from peacock import source
 
+
 def main():
     if len(sys.argv) < 3:
         sys.stderr.write("Expected at least three arguments.")

@@ -11,6 +11,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'peacock-create = peacock.cmds.create:main',
+            'peacock-simple = peacock.cmds.simple:main',
         ]
     }
 )

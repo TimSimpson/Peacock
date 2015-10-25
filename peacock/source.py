@@ -19,3 +19,10 @@ def add_directory(database, directory):
             path = full[directory_len:]
             log.info("Adding image: %s (%s)" % (path, date_time))
             database.add_image(source_id, full, date_time)
+
+
+def get_sources(database):
+    """
+    Returns a map of source_id's to sources.
+    """
+
