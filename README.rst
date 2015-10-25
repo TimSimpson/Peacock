@@ -45,3 +45,11 @@ Then add this to your %PATH% environment variable:
 
 However this is considered sinful by some and can lead to other problems. Works
 on my box though!
+
+Installation
+------------
+
+    $ python.exe -m venv peacock-venv
+    $ peacock-venv/Scripts/activate
+    $ pip install -r requirements
+    $

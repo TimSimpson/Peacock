@@ -2,25 +2,25 @@ from tkinter import *
 from tkinter import ttk
 from PIL import Image
 from PIL.ImageTk import PhotoImage
+import time
 
 
-class Peacock(object):
+class Mario(object):
 
-    def __init__(self, root):
+    def __init__(self, root, gif_path, speed):
         self.root = root
-        # Will return x11, win32, or aqua.
-        self.platform = root.tk.call('tk', 'windowingsystem')
-        self.root.title("Peacock")
+        self.root.title("Mario")
         self.mainframe  = ttk.Frame(self.root, padding="3 3 12 12")
         self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
         self.mainframe.columnconfigure(0, weight=1)
         self.mainframe.rowconfigure(0, weight=1)
-        self.mainframe['borderwidth'] = 2
-        self.mainframe['relief'] = 'sunken'
+        self.mainframe['borderwidth'] = 0
+
+       # self.mainframe['relief'] = 'sunken'
 
         self.label = ttk.Label(self.mainframe, text="HELLO")
         self.label.grid(column=1, row=1, sticky=(N, W, E, S))
-        self.image = Image.open("C:/Users/Tim/Pictures/megamanandzero.png")
+        self.image = Image.open(gif_path, speed)
         self.photo = PhotoImage(self.image)
         self.label['compound'] = 'bottom'
         self.label['image'] = self.photo
@@ -35,10 +35,22 @@ class Peacock(object):
         self.mainframe.columnconfigure(1, weight=1)
         self.mainframe.rowconfigure(1, weight=1)
 
+    def update(self):
+        now = time.strftime("%H:%M:%S")
+        self.label.configure(text=now)
+        self.root.after(100, self.update)
+        try:
+            self.image.seek(self.image.tell() + 1)
+        except EOFError:
+            self.image.seek(0)
 
-def run():
-    root = Tk()
-    # Without this menu items get some gross tear off thing.
-    root.option_add('*tearoff', FALSE)
-    p = Peacock(root)
-    root.mainloop()
+        self.photo = PhotoImage(self.image)
+        self.label['image'] = self.photo
+
+
+root = Tk()
+# Without this menu items get some gross tear off thing.
+root.option_add('*tearoff', FALSE)
+m = Mario(root, gif_path=sys.argv[1], speed=sys.argv[2])
+m.update()
+root.mainloop()
