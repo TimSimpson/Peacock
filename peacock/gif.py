@@ -7,7 +7,7 @@ import time
 
 class Mario(object):
 
-    def __init__(self, root, gif_path, speed):
+    def __init__(self, root, gif_path):
         self.root = root
         self.root.title("Mario")
         self.mainframe  = ttk.Frame(self.root, padding="3 3 12 12")
@@ -20,7 +20,7 @@ class Mario(object):
 
         self.label = ttk.Label(self.mainframe, text="HELLO")
         self.label.grid(column=1, row=1, sticky=(N, W, E, S))
-        self.image = Image.open(gif_path, speed)
+        self.image = Image.open(gif_path) #, speed)
         self.photo = PhotoImage(self.image)
         self.label['compound'] = 'bottom'
         self.label['image'] = self.photo
@@ -51,6 +51,6 @@ class Mario(object):
 root = Tk()
 # Without this menu items get some gross tear off thing.
 root.option_add('*tearoff', FALSE)
-m = Mario(root, gif_path=sys.argv[1], speed=sys.argv[2])
+m = Mario(root, gif_path=sys.argv[1]) #, speed=sys.argv[2])
 m.update()
 root.mainloop()

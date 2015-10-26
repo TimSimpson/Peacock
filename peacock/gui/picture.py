@@ -5,6 +5,43 @@ from PIL import Image
 from PIL.ImageTk import PhotoImage
 
 
+class PilImage(object):
+
+    def __init__(self, image_path):
+        # Determine if the image is animated. TODO: After July 2015, use
+        # n_frames to know if there are frames of animation.
+        self._animated = image_path[-4:].lower() == ".gif"
+        self._original_image = Image.open(image_path)
+        self._image = self._original_image
+        self._size = self._image.size
+
+    @property
+    def animated(self):
+        # For some reasons playing a gif is chronically slow so disable it.
+        return False # self._animated
+
+    @property
+    def image(self):
+        return self._image
+
+    def next_frame(self):
+        try:
+            logging.getLogger().debug("NEXT FRAME!")
+            self._image.seek(self._image.tell() + 1)
+        except EOFError:
+            logging.getLogger().debug(" i/o errow?!! ")
+            self._image.seek(0)
+
+    def resize(self, width, height):
+        scale_width = width / self._size[0]
+        scale_height = height / self._size[1]
+        scale = min(scale_width, scale_height)
+        new_dimensions = (int(self._size[0] * scale),
+                          int(self._size[1] * scale))
+        self._image = self._original_image.resize(
+            new_dimensions, Image.ANTIALIAS)
+
+
 class ImageView(object):
     """
     Views an image. The arrow keys can be used to traverse back and
@@ -15,14 +52,15 @@ class ImageView(object):
         self._parent = parent_control
         self._image_cursor = image_cursor
         self._log = logging.getLogger("ImageView")
-        self.mainframe = ttk.Frame(self._parent, padding="3 3 12 12")
+        self.mainframe = ttk.Frame(self._parent, padding="0 0 0 0") #padding="3 3 12 12")
         self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
         self.mainframe.columnconfigure(0, weight=1)
         self.mainframe.rowconfigure(0, weight=1)
         self.mainframe['borderwidth'] = 2
         self.mainframe['relief'] = 'sunken'
 
-        self.label = ttk.Label(self.mainframe, text="HELLO")
+        self._label_text = StringVar()
+        self.label = ttk.Label(self.mainframe, textvariable=self._label_text)
         self.label.grid(column=1, row=1, sticky=(N, W, E, S))
 
         self.photo = None
@@ -60,26 +98,29 @@ class ImageView(object):
         self.mainframe.focus_set()
         self._set_image()
 
+    def _resize(self):
+        """Resize the image."""
+        self._image.resize(self._width, self._height)
+        self.photo = PhotoImage(self._image.image)
+        #self.photo.zoom(new_dimensions[0], new_dimensions[1])
+        self.label['image'] = self.photo
 
     def _set_image(self):
+        """Change to a new image or initialize it for the first time."""
         image = self._image_cursor.current()
         self._log.debug("Setting image %d" %self._image_cursor._index)
-        pil_image = Image.open(image.path)
+        self._label_text.set(image.path)
+        self._image = PilImage(image.path)
+        self._resize()
+        if self._image.animated:
+            self._log.debug("Going to animate.")
+            self._parent.after(500, self._update_image)
 
-        width, height = pil_image.size
-        scale_width = self._width / width
-        scale_height = self._height / height
-        scale = min(scale_width, scale_height)
+    def _update_image(self):
+        self._image.next_frame()
+        self._resize()
+        self._parent.after(500, self._update_image)
 
-        #pil_image.thumbnail((self._width, self._height), Image.ANTIALIAS)
-        new_dimensions = (int(width * scale), int(height * scale))
-        self._log.debug("old size = %s x %s" % (width, height))
-        self._log.debug("new size = %s x %s" % new_dimensions)
-        pil_image = pil_image.resize(new_dimensions, Image.ANTIALIAS)
-        self.photo = PhotoImage(pil_image)
-        #self.photo.zoom(new_dimensions[0], new_dimensions[1])
-
-        self.label['image'] = self.photo
 
 def demo():
     root = Tk()
