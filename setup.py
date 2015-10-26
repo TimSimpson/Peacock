@@ -12,6 +12,7 @@ setuptools.setup(
         'console_scripts': [
             'peacock-create = peacock.cmds.create:main',
             'peacock-simple = peacock.cmds.simple:main',
+            'peacock-wtf = peacock.cmds.wtf:main',
         ]
     }
 )

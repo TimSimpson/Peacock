@@ -24,16 +24,7 @@ def main():
     db_admin = db.Database.from_config(cfg)
     log.info("Opening up database...")
     conn = db_admin.open_connection()
-    now = datetime.datetime.utcnow()
-    image_finder = conn.find(now, tags=None)
-    image_cursor = image.ImageCursor(conn, image_finder)
-    if image_cursor.empty:
-        print("The given database has no pictures! Exitting.")
-        sys.exit(1)
-
-    root = Tk()
-    # Without this menu items get some gross tear off thing.
-    root.option_add('*tearoff', FALSE)
-    root.title("Image View Demo")
-    p = ImageView(root, image_cursor)
-    root.mainloop()
+    images = conn.grab_all_images()
+    for image in images:
+        print("ID=%s Path=%s\n\tDateTime=%s"
+              % (image.id, image.path, image.datetime))
